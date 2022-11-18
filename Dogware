@@ -1,0 +1,292 @@
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+
+local Window = Rayfield:CreateWindow({
+	Name = "Dogware | @64firetruckmane",
+	LoadingTitle = "Loading",
+	LoadingSubtitle = "by 64firetruckmane",
+	ConfigurationSaving = {
+		Enabled = true,
+		FolderName = nil, -- Create a custom folder for your hub/game
+		FileName = "dog Hub"
+	},
+        Discord = {
+        	Enabled = false,
+        	Invite = "sirius", -- The Discord invite code, do not include discord.gg/
+        	RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+        },
+	KeySystem = true, -- Set this to true to use our key system
+	KeySettings = {
+		Title = "Key System | @64firetruckmane",
+		Subtitle = "Key System",
+		Note = "Join the discord (discord.gg/hFEGDCA5)",
+		FileName = "dog hub",
+		SaveKey = false,
+		GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+		Key = "QeWrTRy"
+	}
+})
+
+Rayfield:Notify({
+    Title = "Dog-Ware",
+    Content = "discord.gg/hFEGDCA5",
+    Duration = 6.5,
+    Image = 11575453113,
+    Actions = { -- Notification Buttons
+        Ignore = {
+            Name = "Okay!",
+            Callback = function()
+                print("The user tapped Okay!")
+            end
+		},
+	},
+})
+
+local Tab = Window:CreateTab("Main", 4370345144) -- Title, Image
+local Section = Tab:CreateSection("Main Stuff")
+
+local Paragraph = Tab:CreateParagraph({Title = "| Dog-Ware-Hub", Content = "- UI designer: @64firetruckmane, -Scripter: @64firetruckmane"})
+local Paragraph = Tab:CreateParagraph({Title = "| Changelog", Content = "- Offical Relase, No Upadte"})
+local Paragraph = Tab:CreateParagraph({Title = "| Need Help?", Content = "- DM 64firetruckmane#1389", 6960991786})
+
+
+local Tab = Window:CreateTab("Visuals", 4431164381) -- Title, Image
+local Section = Tab:CreateSection("Visuals Stuff")
+
+local Toggle = Tab:CreateToggle({
+	Name = "Silent Aim",
+	CurrentValue = false,
+	Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+	-- variables
+local players = game:GetService("Players");
+local localplayer = players.LocalPlayer;
+local camera = workspace.CurrentCamera;
+local shared = getrenv().shared;
+
+-- modules
+local physics = shared.require("physics");
+local particle = shared.require("particle");
+local replication = shared.require("ReplicationInterface");
+local solve = debug.getupvalue(physics.timehit, 2);
+
+-- functions
+local function isVisible(position, ignore)
+    return #camera:GetPartsObscuringTarget({ position }, ignore) == 0;
+end
+
+local function getClosest(dir, ignore)
+    local _angle = fov or math.huge;
+    local _position, _entry;
+
+    replication.operateOnAllEntries(function(player, entry)
+        local tpObject = entry and entry._thirdPersonObject;
+        local character = tpObject and tpObject._character;
+        if character and player.Team ~= localplayer.Team then
+            local part = targetedPart == "Random" and
+                character[math.random() > 0.5 and "Head" or "Torso"] or
+                character[targetedPart or "Head"];
+
+            if not (visibleCheck and not isVisible(part.Position, ignore)) then
+                local dotProduct = dir.Unit:Dot((part.Position - camera.CFrame.p).Unit);
+                local angle = math.deg(math.acos(dotProduct));
+                if angle < _angle then
+                    _angle = angle;
+                    _position = part.Position;
+                    _entry = entry;
+                end
+            end
+        end
+    end);
+
+    return _position, _entry;
+end
+
+local function trajectory(dir, velocity, accel, speed)
+    local t1, t2, t3, t4 = solve(
+        accel:Dot(accel) * 0.25,
+        accel:Dot(velocity),
+        accel:Dot(dir) + velocity:Dot(velocity) - speed^2,
+        dir:Dot(velocity) * 2,
+        dir:Dot(dir));
+
+    local time = (t1>0 and t1) or (t2>0 and t2) or (t3>0 and t3) or t4;
+    local bullet = (dir + velocity*time + 0.5*accel*time^2) / time;
+    return bullet, time;
+end
+
+-- hooks
+local old;
+old = hookfunction(particle.new, function(args)
+    if args.onplayerhit and debug.getinfo(2).name == "fireRound" then
+        local position, entry = getClosest(args.velocity, args.physicsignore);
+        if position and entry then
+            local index = table.find(debug.getstack(2), args.velocity);
+
+            args.velocity = trajectory(
+                position - args.visualorigin,
+                entry._velspring.p,
+                -args.acceleration,
+                args.velocity.Magnitude);
+
+            debug.setstack(2, index, args.velocity);
+        end
+    end
+    return old(args);
+end);	-- The function that takes place when the toggle is pressed
+    		-- The variable (Value) is a boolean on whether the toggle is true or false
+	end,
+})
+
+local Button = Tab:CreateButton({
+	Name = "Rainbow Gun",
+	Callback = function()
+		Blacklisted = {"Flame", "SightMark", "SightMark2A", "Tip", "Trigger"}
+
+		workspace.CurrentCamera.DescendantAdded:Connect(function(O)
+			if O:IsA("BasePart") and not table.find(Blacklisted, O.Name) then
+				spawn(function()
+					while wait() do
+						O.Color = Color3.fromHSV((tick() % 5 / 5), 1, 1)
+						O.Transparency = 0.8
+						O.Material = Enum.Material.ForceField
+					end
+				end)
+			end
+		end)	-- The function that takes place when the button is pressed
+	end,
+})
+
+local Button = Tab:CreateButton({
+	Name = "ESP",
+	Callback = function()
+		local plr = game.Players.LocalPlayer
+
+		local l_character = plr.Character or plr.CharacterAdded:wait()
+		local f_team
+		local e_team
+		local e_plrlist
+		local rs = game:GetService("RunService")
+		local camera = workspace.CurrentCamera
+		local pfId = 292439477
+		local pId = game.PlaceId
+		local is_pf = pfId == pId
+		
+		
+		local function geteplrlist()
+		  local t = {}
+		   if is_pf then
+			   local team_color_to_string = tostring(game.Players.LocalPlayer.TeamColor)
+				   if team_color_to_string == "Bright orange" then
+					   t = workspace.Players["Bright blue"]:GetChildren()
+				   else
+					   t = workspace.Players["Bright orange"]:GetChildren()
+				   end
+		   elseif not is_pf then
+			   if #game.Teams:GetChildren() > 0 then
+				   for i,v in next, game.Players:GetPlayers() do
+					   if v.Team~=game.Players.LocalPlayer.Team then
+						   table.insert(t,v)
+					   end
+				   end
+			   else
+				   for i,v in next, game.Players:GetPlayers() do
+					   if v ~= game.Players.LocalPlayer then
+						   table.insert(t,v)
+						   end
+					   end
+				   end
+			   end
+		   return t
+		end
+		
+		rs.Stepped:Connect(function()
+		e_plrlist = geteplrlist()
+		end)
+		
+		local function check_for_esp(c_model)
+		  if not c_model then
+			  return
+		   else
+			   returnv = false
+			   for i,v in next, c_model:GetDescendants() do
+				  if v:IsA("BoxHandleAdornment") then
+					   returnv = true
+					   break
+					   end
+				   end
+			   return returnv
+		   end
+		end
+		
+		local function remove_esp(c_model)
+		  for i,v in next, c_model:GetDescendants() do
+			  if v:IsA("BoxHandleAdornment") then
+				  v:Destroy()
+			  end
+		  end
+		end
+		
+		
+		
+		
+		local function cast_ray(body_part)
+		  local rp = RaycastParams.new()
+		  rp.FilterDescendantsInstances = l_character:GetDescendants()
+		  rp.FilterType = Enum.RaycastFilterType.Blacklist
+		 
+		  local rcr = workspace:Raycast(camera.CFrame.Position, (body_part.Position - camera.CFrame.Position).Unit * 15000,rp)
+		  if rcr and rcr.Instance:IsDescendantOf(body_part.Parent) then
+			  return true
+		  else
+			  return false
+		  end
+		end
+		
+		local function create_esp(c_model)
+		   if not c_model then
+			   return
+		   else
+			  if check_for_esp(c_model) then
+				  for i,v in next, c_model:GetChildren() do
+					 if v:IsA("BasePart") and v:FindFirstChild("BoxHandleAdornment") then
+						 local walt = v:FindFirstChild("BoxHandleAdornment")
+						  if cast_ray(v) then
+							  walt.Color3 = Color3.fromRGB(0,255,0)
+						  else
+							  walt.Color3 = Color3.fromRGB(255,0,0)
+						   end
+					   end
+				   end
+			   else
+				  for i,v in next, c_model:GetChildren() do
+					  if v:IsA("BasePart") then
+						  local b = Instance.new("BoxHandleAdornment")
+						  b.Parent = v
+						  b.Adornee = v
+						  b.AlwaysOnTop = true
+						  b.Size = v.Size
+						  b.ZIndex = 2
+						  b.Transparency = 0.5
+					  end
+				  end
+			  end
+		   end
+		end
+		
+		setfpscap(10000)
+		
+		rs.RenderStepped:Connect(function()
+		  for i,v in next, e_plrlist do
+			  if is_pf then
+				   create_esp(v)
+			  else
+				   create_esp(v.Character)
+			   end
+		   end
+		end)	-- The function that takes place when the button is pressed
+	end,
+})
+
+
+
+Rayfield:LoadConfiguration()
